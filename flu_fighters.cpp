@@ -82,7 +82,7 @@ extern void drawPowerUp(int);
 extern void drawSnot(float, float,int);
 extern void drawOverlay(int, int, int, int);
 extern void drawTheBoss();
-extern void drawSalmonella(int);
+extern void drawSalmonella(int, float);
 int cursorPos = 1;
 //-----------------------------------------------------------------------------
 // Add Kyle CPP
@@ -969,7 +969,7 @@ void render()
 				glTranslatef(s->pos[0], s->pos[1], s->pos[2]);
 				glRotatef(s->angle, 0.0f, 0.0f, 0.0f);
 
-				drawSalmonella(salmonellaTexture);
+				drawSalmonella(salmonellaTexture, gl.thyme);
 
 				s = s->next;
 		}

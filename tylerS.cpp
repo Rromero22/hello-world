@@ -229,7 +229,7 @@ void drawGBola(int GBolaTexture, float thyme)
     glPopMatrix();
 }
 
-void drawSalmonella(int salmonellaTexture)
+void drawSalmonella(int salmonellaTexture, float thyme)
 {
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f);
