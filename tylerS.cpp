@@ -3,6 +3,7 @@ using namespace std;
 #include <GL/glx.h>
 #include <ctime>
 #include <unistd.h>
+#include <iostream>
 
 extern double timeDiff(struct timespec *start, struct timespec *end);
 
@@ -233,7 +234,12 @@ void drawSalmonella(int salmonellaTexture)
     glEnable(GL_ALPHA_TEST);
     glAlphaFunc(GL_GREATER, 0.0f);
     glBindTexture(GL_TEXTURE_2D, salmonellaTexture);
-    float SHeight = 40.0;
+    float SHeight;
+    if ((int)thyme % 2 != 0) {
+        SHeight = 35.0;
+    } else {
+        SHeight = 40.0;
+    }
     float SWidth = 40.0;
     glBegin(GL_QUADS);
         glTexCoord2f(1.0f, 0.0f); glVertex2f( SWidth,  SHeight);

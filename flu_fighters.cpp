@@ -97,6 +97,7 @@ extern void checkEnemyCollision(struct Game *);
 extern void deleteGbola(struct Game *, Gbola *);
 extern void deleteSalmonella(struct Game *, Salmonella *);
 extern void shootG(Gbola *, int);
+extern void shootS(Salmonella *, int, struct Game *);
 
 
 Shape s;
@@ -188,14 +189,6 @@ Global::Global()
 
 Global gl;
 
-/*class Ship {
-public:
-	Vec dir;
-	Vec pos;
-	Vec vel;
-	float angle;
-	float color[3];
-public:*/
 Ship::Ship()
 {
 	VecZero(dir);
@@ -208,99 +201,13 @@ Ship::Ship()
 	color[0] = color[1] = color[2] = 1.0;
 }
 
-/*class Bullet {
-public:
-	Vec pos;
-	Vec vel;
-	float color[3];
-	struct timespec time;
-public:
-	Bullet() { }
-};*/
 Bullet::Bullet() {}
 
-/*Asteroid {
-  public:
-  Vec pos;
-  Vec vel;
-  int nverts;
-  Flt radius;
-  Vec vert[8];
-  float angle;
-  float rotate;
-  float color[3];
-  struct Asteroid *prev;
-  struct Asteroid *next;
-  public:*/
 Asteroid::Asteroid() {
 	prev = NULL;
 	next = NULL;
 }
 
-/*class Game {
-  public:
-  Ship ship;
-  Asteroid *ahead;
-  Gbola *gbhead;
-  Bullet *barr;
-  int nasteroids;
-  int nGbola;
-  int nbullets;
-  struct timespec bulletTimer;
-  struct timespec mouseThrustTimer;
-  bool mouseThrustOn;
-  public:
-  Game() {
-  ahead = NULL;
-  gbhead = NULL;
-  barr = new Bullet[MAX_BULLETS];
-  nasteroids = 0;
-  nbullets = 0;
-  nGbola = 0;
-  mouseThrustOn = false;
-//build 10 asteroids...
-for (int j=0; j<3; j++) {
-Asteroid *a = new Asteroid;
-Gbola *gb = new Gbola((float)(rand() % (gl.xres-75)), 800.0f);
-a->nverts = 8;
-a->radius = rnd()*80.0 + 40.0;
-Flt r2 = a->radius / 2.0;
-Flt angle = 0.0f;
-Flt inc = (PI * 2.0) / (Flt)a->nverts;
-for (int i=0; i<a->nverts; i++) {
-a->vert[i][0] = sin(angle) * (r2 + rnd() * a->radius);
-a->vert[i][1] = cos(angle) * (r2 + rnd() * a->radius);
-angle += inc;
-}
-a->pos[0] = (Flt)(rand() % gl.xres);
-a->pos[1] = (Flt)(rand() % gl.yres);
-a->pos[2] = 0.0f;
-a->angle = 0.0;
-a->rotate = rnd() * 4.0 - 2.0;
-a->color[0] = 0.8;
-a->color[1] = 0.8;
-a->color[2] = 0.7;
-a->vel[0] = (Flt)(rnd()*2.0-1.0);
-a->vel[1] = (Flt)(rnd()*2.0-1.0);
-//std::cout << "asteroid" << std::endl;
-//add to front of linked list
-a->next = ahead;
-gb->next = gbhead;
-if (ahead != NULL)
-ahead->prev = a;
-if (gbhead != NULL)
-gbhead-> prev = gb;
-ahead = a;
-gbhead = gb;
-++nasteroids;
-++nGbola;
-}
-clock_gettime(CLOCK_REALTIME, &bulletTimer);
-}
-~Game() {
-delete [] barr;
-}
-} g;*/
 Game::Game()
 {	
 	gbhead = NULL;
@@ -310,6 +217,11 @@ Game::Game()
 	nGbola = 0;
 	nSalmonella = 0;
 	mouseThrustOn = false;
+	w1 = NULL;
+	w2 = NULL;
+	w3 = NULL;
+	c1 = NULL;
+	c2 = NULL;
 
 	clock_gettime(CLOCK_REALTIME, &bulletTimer);
 
@@ -674,10 +586,6 @@ void normalize2d(Vec v)
 
 void check_mouse(XEvent *e)
 {
-	//Was a mouse button clicked?
-	//static int savex = 0;
-	//static int savey = 0;
-	//static int ct=0;
 	if (e->type != ButtonPress &&
 			e->type != ButtonRelease &&
 			e->type != MotionNotify)
@@ -686,85 +594,14 @@ void check_mouse(XEvent *e)
 		return;
 	if (e->type == ButtonPress) {
 		if (e->xbutton.button==1) {
-			//Left button is down
-			//a little time between each bullet
-			/*struct timespec bt;
-			clock_gettime(CLOCK_REALTIME, &bt);
-			double ts = timeDiff(&g.bulletTimer, &bt);
-			if (ts > 0.1) {
-				timeCopy(&g.bulletTimer, &bt);
-				//shoot a bullet...
-				if (g.nbullets < MAX_BULLETS) {
-					Bullet *b = &g.barr[g.nbullets];
-					timeCopy(&b->time, &bt);
-					b->pos[0] = g.ship.pos[0];
-					b->pos[1] = g.ship.pos[1];
-					b->vel[0] = g.ship.vel[0];
-					b->vel[1] = g.ship.vel[1];
-					//convert ship angle to radians
-					Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
-					//convert angle to a vector
-					Flt xdir = cos(rad);
-					Flt ydir = sin(rad);
-					b->pos[0] += xdir*20.0f;
-					b->pos[1] += ydir*20.0f;
-					b->vel[0] += xdir*6.0f + rnd()*0.1;
-					b->vel[1] += ydir*6.0f + rnd()*0.1;
-					b->color[0] = 1.0f;
-					b->color[1] = 1.0f;
-					b->color[2] = 1.0f;
-					++g.nbullets;
-
-				}
-			}*/
+			// Left button down
 		}
 		if (e->xbutton.button==3) {
 			//Right button is down
 		}
 	}
-	if (e->type == MotionNotify) {/*
-		if (savex != e->xbutton.x || savey != e->xbutton.y) {
-			//Mouse moved
-			int xdiff = savex - e->xbutton.x;
-			int ydiff = savey - e->xbutton.y;
-			if (++ct < 10)
-				return;
-			if (xdiff > 0) {
-				//mouse moved along the x-axis.
-				g.ship.angle += 0.05f * (float)xdiff;
-				if (g.ship.angle >= 360.0f)
-					g.ship.angle -= 360.0f;
-			}
-			else if (xdiff < 0) {
-				g.ship.angle += 0.05f * (float)xdiff;
-				if (g.ship.angle < 0.0f)
-					g.ship.angle += 360.0f;
-			}
-			if (ydiff > 0) {
-				//mouse moved along the y-axis.
-				//apply thrust
-				//convert ship angle to radians
-				Flt rad = ((g.ship.angle+90.0) / 360.0f) * PI * 2.0;
-				//convert angle to a vector
-				Flt xdir = cos(rad);
-				Flt ydir = sin(rad);
-				g.ship.vel[0] += xdir * (float)ydiff * 0.001f;
-				g.ship.vel[1] += ydir * (float)ydiff * 0.001f;
-				Flt speed = sqrt(g.ship.vel[0]*g.ship.vel[0]+
-					g.ship.vel[1]*g.ship.vel[1]);
-				if (speed > 15.0f) {
-					speed = 15.0f;
-					normalize2d(g.ship.vel);
-					g.ship.vel[0] *= speed;
-					g.ship.vel[1] *= speed;
-				}
-				g.mouseThrustOn = true;
-				clock_gettime(CLOCK_REALTIME, &g.mouseThrustTimer);
-			}
-			x11.set_mouse_position(100, 100);
-			savex = savey = 100;
+	if (e->type == MotionNotify) {
 		}
-	*/}
 }
 
 int check_keys(XEvent *e)
@@ -861,7 +698,7 @@ void physics()
 			S_Bullet *sb = &(gb->sbarr[i]);
 			//How long has bullet been alive?
 			double ts = timeDiff(&sb->time, &sbt);
-			if (ts > 12.0) {
+			if (ts > 8.0) {
 				//time to delete the bullet.
 				memcpy(&(gb->sbarr[i]), &(gb->sbarr[gb->nSbullets-1]),
 					sizeof(S_Bullet));
@@ -883,8 +720,40 @@ void physics()
 		gb = gb->next;
 		j++;
 	}
-	//Update asteroid positions
-	//Update asteroid positions
+
+	while(s)
+	{
+		struct timespec sbt;
+		clock_gettime(CLOCK_REALTIME, &sbt);
+		//cout << "working on gbola " << j << endl;
+		i=0;
+		while (i < s->nSbullets) {
+			S_Bullet *sb = &(s->sbarr[i]);
+			//How long has bullet been alive?
+			double ts = timeDiff(&sb->time, &sbt);
+			if (ts > 8.0) {
+				//time to delete the bullet.
+				memcpy(&(s->sbarr[i]), &(s->sbarr[s->nSbullets-1]),
+					sizeof(S_Bullet));
+				s->nSbullets--;
+				//cout << "deleted snot" << endl;
+				//do not increment i.
+				//continue;
+			}
+			//move the snot bullet
+			else {
+				sb->pos[0] += sb->vel[0];
+				sb->pos[1] += sb->vel[1];
+				//cout << "moved snot " << endl;
+				i++;
+			}
+		}
+
+		//cout << "increment gbola" << endl;
+		s = s->next;
+		j++;
+	}
+
 	gb = g.gbhead;
 	s = g.shead;
 
@@ -893,11 +762,10 @@ void physics()
 
     //moveSnot(gb);
 	//
-	//Asteroid collision with bullets?
+	//Enemy collision with bullets?
 	//If collision detected:
 	//   1. delete the bullet
-	//   2. break the asteroid into pieces
-	//      if asteroid small, delete it
+	//   2. delete enemy
 	checkEnemyCollision(&g);
 	//---------------------------------------------------
 	//check keys pressed now
@@ -1018,16 +886,6 @@ void physics()
 			gameState = STARTMENU;
 		}
 	}
-	/*
-	if (g.mouseThrustOn) {
-		//should thrust be turned off
-		struct timespec mtt;
-		clock_gettime(CLOCK_REALTIME, &mtt);
-		double tdif = timeDiff(&mtt, &g.mouseThrustTimer);
-		if (tdif < -0.3)
-			g.mouseThrustOn = false;
-	}
-	*/
 }
 
 
@@ -1042,51 +900,24 @@ void render()
 		waveMenu(gl.xres, gl.yres, WaveScreenTexture, GBolaTexture,
 																	cursorPos);
 	}
-	if( gameState == CUT0 || gameState == CUT5)
+	if ( gameState == CUT0 || gameState == CUT5)
 	{
-	// (gameState == CUT0 || gameState == CUT1 || gameState == CUT2
-	//		|| gameState == CUT3 || gameState == CUT4 || gameState == CUT5) {
-		/*static double pthyme = 0.0;
- 	    struct timespec fpthymeStart, fpthymeEnd;
-		clock_gettime(CLOCK_REALTIME, &fpthymeStart);
-		if (gameState == CUT0) {
-			gameState++;
-		} else if (gameState == CUT5) {
-			gameState = STARTMENU;
-		} else {
-			//static double thyme = 0.0;
-	 	    struct timespec fpthymeStart, fpthymeEnd;
-			clock_gettime(CLOCK_REALTIME, &fpthymeStart);
-			if (pthyme < 3.0) {
-				drawPost();
-			} else {
-				gameState ++;
-			}
-			clock_gettime(CLOCK_REALTIME, &fpthymeEnd);
-		    pthyme += timeDiff(&fpthymeStart, &fpthymeEnd);
-		}
-
-		clock_gettime(CLOCK_REALTIME, &fpthymeEnd);
-	    pthyme += timeDiff(&fpthymeStart, &fpthymeEnd);*/
-
+		cout << "in the if with " << gameState << endl;
 		if (gameState == CUT5) {
 			gameState = STARTMENU;
-		} else {
-			int i = gameState;
-			i++;
+		} else if (gameState == CUT0) {
+			cout << "gamestate when cut0: " << gameState << endl;
 			clock_gettime(CLOCK_REALTIME, &gl.fthymeStart);
 			gl.thyme = 0.0;
-			gameState = static_cast<Gamestate>(i);
+			gameState = WAVE1;
+			cout << "gameState after changing: " << gameState << endl;
 		}
 	}
 	if (gameState == WAVE1 || gameState == WAVE2
 					   || gameState == WAVE3 || gameState == WAVE4
-					 	 					 || gameState == WAVE5) {
+					   || gameState == WAVE5 || gameState == CUT1 
+					   || gameState == CUT2 || gameState == CUT3) {
 
-		//static double thyme = 0.0;
-
- 	    //struct timespec fthymeStart, fthymeEnd;
-		//clock_gettime(CLOCK_REALTIME, &fthymeStart);
 		glViewport(0, 0, gl.xres, gl.yres);
 		//clear color buffer
 		glClearColor(0.053f, .174f, .227f, 0);
@@ -1098,57 +929,17 @@ void render()
 		gameState = (Gamestate)waves(&g, gameState, &gl);
 		cout << "gameState after waves call: " << gameState << endl;
 
-
-
-		/*if (gl.thyme < 3.0) {
-			if (gl.thyme < .5 || (gl.thyme > 1.0 && gl.thyme < 1.5) || (gl.thyme > 2.0
-			 												&& gl.thyme < 2.5)) {
-				drawPre(gameState);
-			}
-		}
-		if (gl.thyme > 5000) {
-			drawPost();
-			if (gl.thyme > 5003) {
-				//enemyCounter = 3;
-				gameState ++;
-				gl.thyme = 0;
-			}
-		}
-		static int enemyCounter = 3;
-		if (gl.thyme > 4) {
-			while (enemyCounter > 0) {
-				spawnGBola();
-				enemyCounter --;
-			}
-		}
-		*/
-		//DRAW POWER UP
-
-		//drawPowerUp(powerUpTexture);
-
-		//DRAW SNOT
-
-		//drawSnot(snotTexture);
-
-		//Draw the enemies
 		{
-			//Asteroid *a = g.ahead;
 			Gbola *gb = g.gbhead;
-			/*	while (a) {
-			//Log("draw asteroid...\n");
-			glColor3fv(a->color);
-			glPushMatrix();
-			glTranslatef(a->pos[0], a->pos[1], a->pos[2]);
-			//glTranslatef(gb->pos[0], gb->pos[1], gb->pos[2]);
-			glRotatef(a->angle, 0.0f, 0.0f, 1.0f);
-			//draw GBola
-			drawGBola(GBolaTexture);
-			a = a->next;
-			//gb = gb->next;
-			}*/
 			while (gb)
 			{
-				glColor3fv(gb->color);
+				switch (gb->health) {
+					case 50 : glColor3f(1.0f, 1.0f, 1.0f); break;
+					case 40 : glColor3f(1.0f, 0.8f, 0.8f); break;
+					case 30 : glColor3f(1.0f, 0.5f, 0.5f); break;
+					case 20 : glColor3f(1.0f, 0.3f, 0.3f); break;
+					case 10 : glColor3f(0.7f, 0.0f, 0.0f); break;
+				}
 				glPushMatrix();
 				glTranslatef(gb->pos[0], gb->pos[1], gb->pos[2]);
 				glRotatef(gb->angle, 0.0f, 0.0f, 0.0f);
@@ -1162,7 +953,18 @@ void render()
 		Salmonella *s = g.shead;
 		while (s)
 		{
-				glColor3fv(s->color);
+				switch (s->health) {
+					case 100 : glColor3f(1.0f, 1.0f, 1.0f); break;
+					case 90 : glColor3f(1.0f, 0.9f, 0.9f); break;
+					case 80 : glColor3f(1.0f, 0.8f, 0.8f); break;
+					case 70 : glColor3f(1.0f, 0.65f, 0.65f); break;
+					case 60 : glColor3f(1.0f, 0.5f, 0.5f); break;
+					case 50 : glColor3f(1.0f, 0.4f, 0.4f); break;
+					case 40 : glColor3f(1.0f, 0.3f, 0.3f); break;
+					case 30 : glColor3f(0.85f, 0.15f, 0.15f); break; 
+					case 20 : glColor3f(0.75f, 0.075f, 0.075f); break;
+					case 10 : glColor3f(0.7f, 0.0f, 0.0f); break;
+				}
 				glPushMatrix();
 				glTranslatef(s->pos[0], s->pos[1], s->pos[2]);
 				glRotatef(s->angle, 0.0f, 0.0f, 0.0f);
@@ -1175,43 +977,40 @@ void render()
 		//Draw the bullets
 		Bullet *b = &g.barr[0];
 		for (int i=0; i<g.nbullets; i++) {
-			//Log("draw bullet...\n");
 			drawBullet(b->pos[0], b->pos[1], bulletTexture);
-			/*glColor3f(1.0, 1.0, 1.0);
-			glBegin(GL_POINTS);
-				glVertex2f(b->pos[0],      b->pos[1]);
-				glVertex2f(b->pos[0]-1.0f, b->pos[1]);
-				glVertex2f(b->pos[0]+1.0f, b->pos[1]);
-				glVertex2f(b->pos[0],      b->pos[1]-1.0f);
-				glVertex2f(b->pos[0],      b->pos[1]+1.0f);
-				glColor3f(0.8, 0.8, 0.8);
-				glVertex2f(b->pos[0]-1.0f, b->pos[1]-1.0f);
-				glVertex2f(b->pos[0]-1.0f, b->pos[1]+1.0f);
-				glVertex2f(b->pos[0]+1.0f, b->pos[1]-1.0f);
-				glVertex2f(b->pos[0]+1.0f, b->pos[1]+1.0f);
-			glEnd();*/
 			++b;
 		}
 
 		Gbola *gb = g.gbhead;
+		s = g.shead;
 
   		shootG(gb, snotTexture);
+
+  		shootS(s, snotTexture, &g);
 
 		while (gb)
 		{
 			S_Bullet *sb = &(gb->sbarr[0]);
 			for (int i=0; i<gb->nSbullets; i++)
 			{
-				//Log("draw bullet...\n");
 				drawSnot(sb->pos[0], sb->pos[1], snotTexture);
 				++sb;
-				//cout << "Drew a bullet" << endl;
 			}
 
 			gb = gb->next;
 		}
 
+		while (s)
+		{
+			S_Bullet *sb = &(s->sbarr[0]);
+			for (int i=0; i<s->nSbullets; i++)
+			{
+				drawSnot(sb->pos[0], sb->pos[1], snotTexture);
+				++sb;
+			}
 
+			s = s->next;
+		}
 
 		Rect r;
         r.bot = 500;
@@ -1220,14 +1019,7 @@ void render()
         ggprint16(&r, 16, 0xFB6AD0, "TIME: %f", gl.thyme);
 
 		drawOverlay(gl.xres, gl.yres, lives, shipTexture);
-        //CHANGE WAVES:
-        /*if (gl.thyme > 10.0 && g.nGbola == 0 ) {
-			gl.thyme = 5000;
-			//g.nGbola = 5;
-			//enemyCounter = 3;
-        	//gameState++;
-		}*/
-
+		cout << "made it to updating time " << endl;
 		clock_gettime(CLOCK_REALTIME, &gl.fthymeEnd);
 	    gl.thyme = timeDiff(&gl.fthymeStart, &gl.fthymeEnd);
 	}
